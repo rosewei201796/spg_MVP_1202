@@ -4,7 +4,7 @@ import { Zap } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 export function LoadingOverlay() {
-  const { isGenerating, loadingText } = useAppStore();
+  const { isGenerating } = useAppStore();
 
   if (!isGenerating) return null;
 
@@ -29,17 +29,15 @@ export function LoadingOverlay() {
       {/* Loading Text */}
       <div className="bg-white border-4 border-black hard-shadow px-8 py-4 mb-4">
         <h3 className="text-2xl font-black uppercase text-black animate-pulse">
-          {loadingText}
+          GENERATING
         </h3>
       </div>
 
       {/* Subtitle */}
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 bg-neon-orange animate-pulse" />
-        <p className="text-electric-blue text-xs tracking-[0.3em] uppercase font-black">
-          AI WORLD BUILDING
+      <div className="max-w-sm">
+        <p className="text-electric-blue text-xs font-normal italic text-center leading-relaxed">
+          To see a world in a grain of sand, and a heaven in a wild flower…
         </p>
-        <div className="w-2 h-2 bg-hot-pink animate-pulse" />
       </div>
 
       {/* Decorative Elements */}

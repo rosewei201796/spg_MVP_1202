@@ -8,8 +8,19 @@ import {
   INITIAL_CHANNELS,
 } from "./mockData";
 import { API } from "./api";
+import { 
+  getCurrentUser, 
+  login, 
+  register, 
+  logout, 
+  autoRegister,
+  updateUsername as authUpdateUsername,
+  updatePassword as authUpdatePassword,
+  type User 
+} from "./auth";
+import { loadUserData, saveUserData, autoSaveUserData } from "./storage";
 
-export type View = "explore" | "create" | "myChannels" | "channelDetail";
+export type View = "explore" | "create" | "myChannels" | "channelDetail" | "settings";
 
 export type RemixMode = "createNew" | "addToExisting";
 
@@ -21,6 +32,17 @@ interface RemixSource {
 }
 
 interface AppState {
+  // Authentication
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  authError: string | null;
+  handleLogin: (username: string, password: string) => void;
+  handleRegister: (username: string, password: string) => void;
+  handleAutoRegister: () => void;
+  handleLogout: () => void;
+  handleUpdateUsername: (newUsername: string) => void;
+  handleUpdatePassword: (oldPassword: string, newPassword: string) => void;
+
   // Navigation
   currentView: View;
   setCurrentView: (view: View) => void;
@@ -82,28 +104,133 @@ interface AppState {
   getDetailContent: () => Content | null;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
-  // Initial state
-  currentView: "explore",
-  channels: INITIAL_CHANNELS, // 预置3个 channel，每个6张图
-  userChannels: [],
+export const useAppStore = create<AppState>((set, get) => {
+  // 初始化时加载用户数据
+  const currentUser = getCurrentUser();
+  const userData = currentUser ? loadUserData(currentUser.id) : null;
+  
+  return {
+    // Authentication state
+    currentUser: currentUser,
+    isAuthenticated: !!currentUser,
+    authError: null,
 
-  activeChannelIdx: 0,
-  activeContentIdx: 0,
+    // Initial state
+    currentView: "explore",
+    channels: INITIAL_CHANNELS, // 预置的公共 channels
+    userChannels: userData?.channels || [], // 用户自己的 channels
 
-  detailChannelId: null,
-  detailContentIdx: 0,
+    activeChannelIdx: 0,
+    activeContentIdx: 0,
 
-  remixSource: null,
-  isRemixModalOpen: false,
-  newChannelPrompt: "",
-  isGenerating: false,
-  loadingText: "",
-  remixMode: "createNew", // 默认创建新 channel
-  remixTargetChannelId: null,
-  referenceImage: null,
-  uploadProgress: 0,
-  likedContents: new Set<string>(),
+    detailChannelId: null,
+    detailContentIdx: 0,
+
+    remixSource: null,
+    isRemixModalOpen: false,
+    newChannelPrompt: "",
+    isGenerating: false,
+    loadingText: "",
+    remixMode: "createNew", // 默认创建新 channel
+    remixTargetChannelId: null,
+    referenceImage: null,
+    uploadProgress: 0,
+    likedContents: new Set<string>(userData?.likedContents || []),
+
+  // Authentication Actions
+  handleLogin: (username, password) => {
+    const result = login(username, password);
+    if (result.success && result.user) {
+      const userData = loadUserData(result.user.id);
+      set({
+        currentUser: result.user,
+        isAuthenticated: true,
+        authError: null,
+        userChannels: userData?.channels || [],
+        likedContents: new Set(userData?.likedContents || []),
+      });
+    } else {
+      set({ authError: result.error || 'Login failed' });
+    }
+  },
+
+  handleRegister: (username, password) => {
+    const result = register(username, password);
+    if (result.success && result.user) {
+      set({
+        currentUser: result.user,
+        isAuthenticated: true,
+        authError: null,
+        userChannels: [],
+        likedContents: new Set(),
+      });
+    } else {
+      set({ authError: result.error || 'Registration failed' });
+    }
+  },
+
+  handleAutoRegister: () => {
+    const result = autoRegister();
+    if (result.success && result.user) {
+      set({
+        currentUser: result.user,
+        isAuthenticated: true,
+        authError: null,
+        userChannels: [],
+        likedContents: new Set(),
+      });
+      alert(`Welcome! Your username is: ${result.username}\n\nYou can change it in Settings.`);
+    } else {
+      set({ authError: result.error || 'Auto registration failed' });
+    }
+  },
+
+  handleLogout: () => {
+    const state = get();
+    // 保存用户数据
+    if (state.currentUser) {
+      autoSaveUserData(
+        state.currentUser.id,
+        state.userChannels,
+        Array.from(state.likedContents)
+      );
+    }
+    
+    logout();
+    set({
+      currentUser: null,
+      isAuthenticated: false,
+      userChannels: [],
+      likedContents: new Set(),
+      currentView: 'explore',
+    });
+  },
+
+  handleUpdateUsername: (newUsername) => {
+    const state = get();
+    if (!state.currentUser) return;
+
+    const result = authUpdateUsername(state.currentUser.id, newUsername);
+    if (result.success) {
+      set({
+        currentUser: { ...state.currentUser, username: newUsername },
+      });
+    } else {
+      alert(result.error || 'Failed to update username');
+    }
+  },
+
+  handleUpdatePassword: (oldPassword, newPassword) => {
+    const state = get();
+    if (!state.currentUser) return;
+
+    const result = authUpdatePassword(state.currentUser.id, oldPassword, newPassword);
+    if (result.success) {
+      alert('Password updated successfully!');
+    } else {
+      alert(result.error || 'Failed to update password');
+    }
+  },
 
   // Actions
   setCurrentView: (view) => set({ currentView: view }),
@@ -158,6 +285,15 @@ export const useAppStore = create<AppState>((set, get) => ({
           return content;
         }),
       }));
+
+      // 自动保存用户数据
+      if (state.currentUser) {
+        autoSaveUserData(
+          state.currentUser.id,
+          state.userChannels,
+          Array.from(newLikedContents)
+        );
+      }
 
       return {
         likedContents: newLikedContents,
@@ -238,17 +374,30 @@ export const useAppStore = create<AppState>((set, get) => ({
         dropToFeed: dropToFeed,
       };
 
-      set((state) => ({
-        // 只有当 dropToFeed 为 true 时才添加到首页 feed 流
-        channels: dropToFeed ? [newChannel, ...state.channels] : state.channels,
-        userChannels: [newChannel, ...state.userChannels],
-        isGenerating: false,
-        newChannelPrompt: "",
-        isRemixModalOpen: false,
-        currentView: "myChannels",
-        referenceImage: null, // 清除上传的图片
-        uploadProgress: 0,
-      }));
+      set((state) => {
+        const updatedUserChannels = [newChannel, ...state.userChannels];
+        
+        // 自动保存用户数据
+        if (state.currentUser) {
+          autoSaveUserData(
+            state.currentUser.id,
+            updatedUserChannels,
+            Array.from(state.likedContents)
+          );
+        }
+        
+        return {
+          // 只有当 dropToFeed 为 true 时才添加到首页 feed 流
+          channels: dropToFeed ? [newChannel, ...state.channels] : state.channels,
+          userChannels: updatedUserChannels,
+          isGenerating: false,
+          newChannelPrompt: "",
+          isRemixModalOpen: false,
+          currentView: "myChannels",
+          referenceImage: null, // 清除上传的图片
+          uploadProgress: 0,
+        };
+      });
     } catch (error) {
       console.error("Failed to create channel:", error);
       
@@ -349,6 +498,15 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
             return channel;
           });
+
+          // 自动保存用户数据
+          if (state.currentUser) {
+            autoSaveUserData(
+              state.currentUser.id,
+              updatedUserChannels,
+              Array.from(state.likedContents)
+            );
+          }
 
           return {
             channels: updatedChannels,
@@ -467,4 +625,5 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!channel) return null;
     return channel.contents[state.detailContentIdx] || null;
   },
-}));
+};
+});

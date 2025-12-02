@@ -1,10 +1,10 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { Zap, Settings } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 export function Profile() {
-  const { userChannels, setDetailChannel, toggleChannelDropToFeed } = useAppStore();
+  const { userChannels, currentUser, setDetailChannel, toggleChannelDropToFeed, setCurrentView } = useAppStore();
 
   return (
     <div className="w-full h-full bg-[#121212] text-white flex flex-col pt-16 px-4">
@@ -16,8 +16,18 @@ export function Profile() {
             {userChannels.length} COLLECTIONS
           </p>
         </div>
-        <div className="w-14 h-14 bg-neon-orange border-4 border-black hard-shadow flex items-center justify-center text-2xl font-black text-black">
-          ME
+        
+        {/* Settings Button */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCurrentView("settings")}
+            className="w-12 h-12 bg-white border-3 border-black hard-shadow flex items-center justify-center active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_#000] transition-all"
+          >
+            <Settings size={20} className="text-black" strokeWidth={3} />
+          </button>
+          <div className="w-14 h-14 bg-neon-orange border-4 border-black hard-shadow flex items-center justify-center text-2xl font-black text-black">
+            {currentUser?.username.substring(0, 2).toUpperCase() || "ME"}
+          </div>
         </div>
       </div>
 
