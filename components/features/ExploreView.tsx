@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, PanInfo, AnimatePresence } from "framer-motion";
 import { Heart, RefreshCw } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { WorldChat } from "./WorldChat";
 
 const SWIPE_THRESHOLD = 80;
 const SWIPE_VELOCITY_THRESHOLD = 500;
@@ -191,6 +192,14 @@ export function ExploreView() {
           </div>
         </div>
       </div>
+
+      {/* Worldchat - 仅在公共 channel 显示 */}
+      {!currentChannel.isUserGenerated && (
+        <WorldChat 
+          channelId={currentChannel.id}
+          channelName={currentChannel.name}
+        />
+      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
   type User 
 } from "./auth";
 import { loadUserData, saveUserData, autoSaveUserData } from "./storage";
+import type { ChatMessage } from "./chat";
 
 export type View = "explore" | "create" | "myChannels" | "channelDetail" | "settings";
 
@@ -105,6 +106,11 @@ interface AppState {
   deleteContent: (channelId: string, contentId: string) => void;
   deleteChannel: (channelId: string) => void;
 
+  // Chat (Worldchat)
+  visibleChatMessages: ChatMessage[]; // 当前可见的聊天消息（带过期时间）
+  addChatMessage: (message: ChatMessage) => void; // 添加新消息到可见列表
+  removeExpiredChatMessages: () => void; // 移除过期的消息
+
   // Helpers
   getCurrentChannel: () => Channel | null;
   getCurrentContent: () => Content | null;
@@ -144,6 +150,9 @@ export const useAppStore = create<AppState>((set, get) => {
     referenceImage: null,
     uploadProgress: 0,
     likedContents: new Set<string>(userData?.likedContents || []),
+
+    // Chat state
+    visibleChatMessages: [],
 
   // Authentication Actions
   handleLogin: (username, password) => {
@@ -773,6 +782,41 @@ export const useAppStore = create<AppState>((set, get) => {
       }
 
       return newState;
+    });
+  },
+
+  // Chat (Worldchat) Actions
+  addChatMessage: (message) => {
+    set((state) => {
+      // 添加新消息到可见列表
+      const newVisibleMessages = [...state.visibleChatMessages, message];
+      
+      // 限制最多同时显示 5 条消息
+      const limitedMessages = newVisibleMessages.slice(-5);
+      
+      return {
+        visibleChatMessages: limitedMessages,
+      };
+    });
+  },
+
+  removeExpiredChatMessages: () => {
+    set((state) => {
+      const now = Date.now();
+      const MESSAGE_DISPLAY_DURATION = 5000; // 5 秒
+      
+      // 移除超过显示时长的消息
+      const validMessages = state.visibleChatMessages.filter(
+        msg => now - msg.timestamp < MESSAGE_DISPLAY_DURATION
+      );
+      
+      if (validMessages.length < state.visibleChatMessages.length) {
+        return {
+          visibleChatMessages: validMessages,
+        };
+      }
+      
+      return state;
     });
   },
 
