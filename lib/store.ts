@@ -11,9 +11,13 @@ import { API } from "./api";
 
 export type View = "explore" | "create" | "myChannels" | "channelDetail";
 
+export type RemixMode = "createNew" | "addToExisting";
+
 interface RemixSource {
   content: Content;
   channelName: string;
+  isOwnChannel: boolean; // 是否是自己的 channel
+  currentChannelId?: string; // 如果是自己的 channel，记录当前 channel ID
 }
 
 interface AppState {
@@ -43,6 +47,10 @@ interface AppState {
   newChannelPrompt: string;
   isGenerating: boolean;
   loadingText: string;
+  remixMode: RemixMode; // 'createNew' or 'addToExisting'
+  remixTargetChannelId: string | null; // 当 mode 为 addToExisting 时的目标 channel
+  setRemixMode: (mode: RemixMode) => void;
+  setRemixTargetChannelId: (channelId: string | null) => void;
   
   // File upload
   referenceImage: string | null;
@@ -61,8 +69,9 @@ interface AppState {
   setIsGenerating: (isGenerating: boolean) => void;
   setLoadingText: (text: string) => void;
 
-  openRemix: (content: Content, channelName: string) => void;
+  openRemix: (content: Content, channelName: string, isOwnChannel: boolean, currentChannelId?: string) => void;
   handleCreateChannel: (prompt: string, isRemix?: boolean, sourceChannelName?: string, dropToFeed?: boolean) => Promise<void>;
+  handleRemix: () => Promise<void>; // 统一的 remix 处理函数
   handleUploadToChannel: (channelId: string) => void;
   toggleChannelDropToFeed: (channelId: string) => void;
 
@@ -90,6 +99,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   newChannelPrompt: "",
   isGenerating: false,
   loadingText: "",
+  remixMode: "createNew", // 默认创建新 channel
+  remixTargetChannelId: null,
   referenceImage: null,
   uploadProgress: 0,
   likedContents: new Set<string>(),
@@ -156,11 +167,27 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   isContentLiked: (contentId) => get().likedContents.has(contentId),
 
-  openRemix: (content, channelName) => {
+  setRemixMode: (mode) => set({ remixMode: mode }),
+  
+  setRemixTargetChannelId: (channelId) => set({ remixTargetChannelId: channelId }),
+
+  openRemix: (content, channelName, isOwnChannel, currentChannelId) => {
+    // 根据上下文设置默认的 remix 模式
+    const defaultMode: RemixMode = isOwnChannel ? "addToExisting" : "createNew";
+    const defaultTargetId = isOwnChannel ? currentChannelId || null : null;
+    
     set({
-      remixSource: { content, channelName },
+      remixSource: { 
+        content, 
+        channelName, 
+        isOwnChannel,
+        currentChannelId 
+      },
       newChannelPrompt: content.prompt,
       isRemixModalOpen: true,
+      remixMode: defaultMode,
+      remixTargetChannelId: defaultTargetId,
+      referenceImage: content.src, // 使用原图作为参考
     });
   },
 
@@ -236,6 +263,116 @@ export const useAppStore = create<AppState>((set, get) => ({
       // 向用户显示错误信息
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`Failed to create channel: ${errorMessage}\n\nPlease check:\n1. API keys are configured correctly\n2. Network connection is stable\n3. API service is available`);
+    }
+  },
+
+  handleRemix: async () => {
+    const state = get();
+    const { remixMode, remixTargetChannelId, newChannelPrompt, referenceImage, remixSource } = state;
+
+    if (!remixSource) return;
+
+    if (remixMode === "createNew") {
+      // 创建新 channel（生成 6-8 张冷启图）
+      await get().handleCreateChannel(
+        newChannelPrompt,
+        true, // isRemix
+        remixSource.channelName,
+        true // dropToFeed
+      );
+    } else if (remixMode === "addToExisting" && remixTargetChannelId) {
+      // 添加到现有 channel（生成 3 张 remix 图）
+      set({
+        isGenerating: true,
+        loadingText: "Creating remix...",
+      });
+
+      try {
+        // 生成 3 张 remix 图
+        const geminiResult = await API.generateImagePromptsWithGemini({
+          userPrompt: newChannelPrompt,
+          referenceImage: referenceImage || undefined,
+          numPrompts: 3, // 生成 3 个 prompts
+        });
+
+        if (!geminiResult.success || !geminiResult.prompts || geminiResult.prompts.length === 0) {
+          throw new Error('Failed to generate prompts');
+        }
+
+        const newContents: Content[] = [];
+        
+        // 为每个 prompt 生成图片
+        for (let i = 0; i < geminiResult.prompts.length; i++) {
+          const promptText = geminiResult.prompts[i];
+          
+          const result = await API.generateImages({
+            prompt: promptText,
+            referenceImage: referenceImage || undefined,
+            numImages: 1,
+          });
+
+          if (result.success && result.images.length > 0) {
+            newContents.push({
+              id: `content_${remixTargetChannelId}_${Date.now()}_${i}`,
+              channelId: remixTargetChannelId,
+              type: "image",
+              src: result.images[0],
+              prompt: promptText,
+              createdAt: new Date().toISOString(),
+              likes: Math.floor(Math.random() * 100) + 10,
+            });
+          }
+        }
+
+        if (newContents.length === 0) {
+          throw new Error('Failed to generate any images');
+        }
+
+        // 将新内容添加到目标 channel
+        set((state) => {
+          const updatedChannels = state.channels.map((channel) => {
+            if (channel.id === remixTargetChannelId) {
+              return {
+                ...channel,
+                contents: [...newContents, ...channel.contents],
+              };
+            }
+            return channel;
+          });
+
+          const updatedUserChannels = state.userChannels.map((channel) => {
+            if (channel.id === remixTargetChannelId) {
+              return {
+                ...channel,
+                contents: [...newContents, ...channel.contents],
+              };
+            }
+            return channel;
+          });
+
+          return {
+            channels: updatedChannels,
+            userChannels: updatedUserChannels,
+            isGenerating: false,
+            newChannelPrompt: "",
+            isRemixModalOpen: false,
+            referenceImage: null,
+            uploadProgress: 0,
+          };
+        });
+
+        console.log(`✅ Added ${newContents.length} remix images to channel`);
+      } catch (error) {
+        console.error("Failed to add remix content:", error);
+        
+        set({
+          isGenerating: false,
+          loadingText: "",
+        });
+        
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to create remix: ${errorMessage}`);
+      }
     }
   },
 

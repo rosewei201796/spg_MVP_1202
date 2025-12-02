@@ -166,7 +166,12 @@ export function ExploreView() {
             content={currentContent}
             channelName={currentChannel.name}
             owner={currentChannel.owner}
-            onRemix={() => openRemix(currentContent, currentChannel.name)}
+            onRemix={() => openRemix(
+              currentContent, 
+              currentChannel.name,
+              currentChannel.isUserGenerated, // isOwnChannel
+              currentChannel.id // currentChannelId
+            )}
           />
         </motion.div>
       </AnimatePresence>

@@ -70,7 +70,12 @@ export function ChannelDetailView() {
           content={currentContent}
           channelName={channel.name}
           owner={channel.owner}
-          onRemix={() => openRemix(currentContent, channel.name)}
+          onRemix={() => openRemix(
+            currentContent, 
+            channel.name, 
+            channel.isUserGenerated, // isOwnChannel
+            channel.id // currentChannelId
+          )}
         />
       </motion.div>
 
