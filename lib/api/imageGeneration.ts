@@ -66,7 +66,9 @@ async function generateWithGemini(
     if (data.choices?.[0]?.message?.images?.[0]?.image_url?.url) {
       imageUrl = data.choices[0].message.images[0].image_url.url;
       console.log('✅ Extracted image from Gemini response (data URL format)');
-      console.log('📸 Image preview:', imageUrl.substring(0, 80) + '...');
+      if (imageUrl) {
+        console.log('📸 Image preview:', imageUrl.substring(0, 80) + '...');
+      }
     }
     // 备用方法：检查 content 字段
     else if (data.choices?.[0]?.message?.content) {
