@@ -43,7 +43,9 @@ export function AuthScreen({ onLogin, onRegister, onAutoRegister, error }: AuthS
         {/* Poetic Title */}
         <div className="max-w-sm mx-auto">
           <h1 className="text-white text-2xl font-bold italic leading-relaxed tracking-wide">
-            A universe in a grain of sand.
+            A universe
+            <br />
+            in a grain of sand.
           </h1>
         </div>
       </div>
