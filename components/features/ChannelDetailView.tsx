@@ -72,38 +72,47 @@ export function ChannelDetailView() {
       return;
     }
 
-    // 验证文件大小 (最大 5MB)
-    const maxSize = 5 * 1024 * 1024;
+    // 验证文件大小 (最大 10MB 原始文件)
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert('Image size should be less than 5MB');
+      alert('Image size should be less than 10MB');
       return;
     }
 
     try {
-      // 读取图片并转换为 Base64
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        if (imageUrl) {
-          // 添加到 channel
-          addUploadedImageToChannel(channel.id, imageUrl, file.name);
-          
-          // 清空 input，以便可以重复选择同一个文件
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-          
-          // 切换到新上传的图片（现在是第一个）
-          setDetailContentIdx(0);
-        }
-      };
-      reader.onerror = () => {
-        alert('Failed to read image file');
-      };
-      reader.readAsDataURL(file);
+      // 动态导入压缩工具
+      const { compressImageFile, getImageInfo } = await import('@/lib/imageCompression');
+      
+      // 显示加载提示
+      console.log('📤 Uploading and compressing image...');
+      
+      // 获取图片信息
+      const info = await getImageInfo(file);
+      console.log(`📸 Original: ${info.width}x${info.height}, ${info.sizeKB.toFixed(0)}KB`);
+      
+      // 压缩图片
+      const compressedImageUrl = await compressImageFile(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+        maxSizeKB: 800, // 目标最大 800KB
+      });
+      
+      // 添加到 channel
+      addUploadedImageToChannel(channel.id, compressedImageUrl, file.name);
+      
+      // 清空 input，以便可以重复选择同一个文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // 切换到新上传的图片（现在是第一个）
+      setDetailContentIdx(0);
+      
+      console.log('✅ Image uploaded successfully');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      console.error('❌ Error uploading image:', error);
+      alert('Failed to upload image. Please try a smaller image.');
     }
   };
 

@@ -22,6 +22,9 @@ import { loadUserData, saveUserData, autoSaveUserData } from "./storage";
 
 export type View = "explore" | "create" | "myChannels" | "channelDetail" | "settings";
 
+// 每个 channel 最多保留的内容数量
+const MAX_CONTENTS_PER_CHANNEL = 30;
+
 export type RemixMode = "createNew" | "addToExisting";
 
 interface RemixSource {
@@ -482,13 +485,25 @@ export const useAppStore = create<AppState>((set, get) => {
           throw new Error('Failed to generate any images');
         }
 
-        // 将新内容添加到目标 channel
+        // 将新内容添加到目标 channel，限制总数量
         set((state) => {
           const updatedChannels = state.channels.map((channel) => {
             if (channel.id === remixTargetChannelId) {
+              const allContents = [...newContents, ...channel.contents];
+              
+              // 如果超过最大数量，删除最旧的内容
+              if (allContents.length > MAX_CONTENTS_PER_CHANNEL) {
+                const removed = allContents.length - MAX_CONTENTS_PER_CHANNEL;
+                console.log(`🧹 Channel "${channel.name}": Removed ${removed} old images to stay within limit (${MAX_CONTENTS_PER_CHANNEL})`);
+                return {
+                  ...channel,
+                  contents: allContents.slice(0, MAX_CONTENTS_PER_CHANNEL),
+                };
+              }
+              
               return {
                 ...channel,
-                contents: [...newContents, ...channel.contents],
+                contents: allContents,
               };
             }
             return channel;
@@ -496,9 +511,19 @@ export const useAppStore = create<AppState>((set, get) => {
 
           const updatedUserChannels = state.userChannels.map((channel) => {
             if (channel.id === remixTargetChannelId) {
+              const allContents = [...newContents, ...channel.contents];
+              
+              // 如果超过最大数量，删除最旧的内容
+              if (allContents.length > MAX_CONTENTS_PER_CHANNEL) {
+                return {
+                  ...channel,
+                  contents: allContents.slice(0, MAX_CONTENTS_PER_CHANNEL),
+                };
+              }
+              
               return {
                 ...channel,
-                contents: [...newContents, ...channel.contents],
+                contents: allContents,
               };
             }
             return channel;
@@ -557,12 +582,24 @@ export const useAppStore = create<AppState>((set, get) => {
         likes: 0,
       };
 
-      // 更新 userChannels
+      // 更新 userChannels，限制内容数量
       const updatedUserChannels = state.userChannels.map((channel) => {
         if (channel.id === channelId) {
+          const newContents = [newContent, ...channel.contents];
+          
+          // 如果超过最大数量，删除最旧的内容
+          if (newContents.length > MAX_CONTENTS_PER_CHANNEL) {
+            const removed = newContents.length - MAX_CONTENTS_PER_CHANNEL;
+            console.log(`🧹 Channel "${channel.name}": Removed ${removed} old images to stay within limit (${MAX_CONTENTS_PER_CHANNEL})`);
+            return {
+              ...channel,
+              contents: newContents.slice(0, MAX_CONTENTS_PER_CHANNEL),
+            };
+          }
+          
           return {
             ...channel,
-            contents: [newContent, ...channel.contents],
+            contents: newContents,
           };
         }
         return channel;
@@ -571,9 +608,19 @@ export const useAppStore = create<AppState>((set, get) => {
       // 更新 channels (feed流)
       const updatedChannels = state.channels.map((channel) => {
         if (channel.id === channelId) {
+          const newContents = [newContent, ...channel.contents];
+          
+          // 如果超过最大数量，删除最旧的内容
+          if (newContents.length > MAX_CONTENTS_PER_CHANNEL) {
+            return {
+              ...channel,
+              contents: newContents.slice(0, MAX_CONTENTS_PER_CHANNEL),
+            };
+          }
+          
           return {
             ...channel,
-            contents: [newContent, ...channel.contents],
+            contents: newContents,
           };
         }
         return channel;

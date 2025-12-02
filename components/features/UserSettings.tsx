@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { X, User, Lock, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, User, Lock, Check, HardDrive } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStorageInfo } from "@/lib/storageMonitor";
 
 interface UserSettingsProps {
   currentUsername: string;
@@ -23,6 +24,19 @@ export function UserSettings({
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [storageInfo, setStorageInfo] = useState(getStorageInfo());
+
+  // 定期更新存储信息
+  useEffect(() => {
+    const updateStorage = () => {
+      setStorageInfo(getStorageInfo());
+    };
+    
+    updateStorage();
+    const interval = setInterval(updateStorage, 3000); // 每3秒更新
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleUpdateUsername = () => {
     if (newUsername.trim() && newUsername !== currentUsername) {
@@ -142,6 +156,61 @@ export function UserSettings({
                 <Lock size={18} />
                 UPDATE PASSWORD
               </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-1 bg-white/10"></div>
+
+          {/* Storage Section */}
+          <div>
+            <label className="text-xs text-electric-blue font-black uppercase tracking-wider mb-3 block flex items-center gap-2">
+              <HardDrive size={14} />
+              STORAGE USAGE
+            </label>
+            <div className="bg-gray-900 border-4 border-black p-4">
+              {/* Storage bar */}
+              <div className="mb-3">
+                <div className="w-full h-6 bg-gray-700 border-2 border-black relative overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full border-r-2 border-black transition-all duration-500",
+                      storageInfo.usagePercent >= 90 ? "bg-red-500" :
+                      storageInfo.usagePercent >= 80 ? "bg-neon-orange" :
+                      "bg-electric-blue"
+                    )}
+                    style={{ width: `${Math.min(storageInfo.usagePercent, 100)}%` }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-black text-white drop-shadow-[0_0_3px_rgba(0,0,0,0.8)]">
+                      {storageInfo.usagePercent.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Storage info */}
+              <div className="space-y-1 text-xs font-bold text-white">
+                <div className="flex justify-between">
+                  <span className="text-gray-400 uppercase">Used:</span>
+                  <span>{storageInfo.usedKB.toFixed(0)} KB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 uppercase">Limit:</span>
+                  <span>{storageInfo.estimatedLimitKB} KB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 uppercase">Items:</span>
+                  <span>{storageInfo.itemCount}</span>
+                </div>
+              </div>
+
+              {/* Warning */}
+              {storageInfo.usagePercent >= 80 && (
+                <div className="mt-3 p-2 bg-red-600 border-2 border-black text-white text-xs font-bold uppercase">
+                  ⚠️ {storageInfo.usagePercent >= 90 ? 'Storage almost full!' : 'Storage filling up'}
+                </div>
+              )}
             </div>
           </div>
 

@@ -5,6 +5,7 @@
 
 import type { Channel } from './mockData';
 import { getUserDataKey } from './auth';
+import { getStorageInfo, getStorageWarning, canSaveData } from './storageMonitor';
 
 export interface UserData {
   userId: string;
@@ -27,12 +28,60 @@ export function saveUserData(userId: string, channels: Channel[], likedContents:
       lastUpdated: new Date().toISOString(),
     };
 
-    const key = getUserDataKey(userId);
-    localStorage.setItem(key, JSON.stringify(userData));
+    // 检查是否有足够空间
+    const spaceCheck = canSaveData(userData);
+    if (!spaceCheck.canSave) {
+      console.error('❌ Cannot save:', spaceCheck.reason);
+      throw new Error(spaceCheck.reason);
+    }
     
-    console.log(`💾 Saved ${channels.length} channels for user ${userId}`);
+    if (spaceCheck.reason) {
+      console.warn('⚠️', spaceCheck.reason);
+    }
+
+    const key = getUserDataKey(userId);
+    const dataString = JSON.stringify(userData);
+    
+    // 检查数据大小
+    const dataSizeKB = new Blob([dataString]).size / 1024;
+    const storageInfo = getStorageInfo();
+    console.log(
+      `💾 Saving ${dataSizeKB.toFixed(2)} KB for user ${userId} ` +
+      `(Storage: ${storageInfo.usagePercent.toFixed(1)}% used)`
+    );
+    
+    localStorage.setItem(key, dataString);
+    
+    console.log(`✅ Saved ${channels.length} channels for user ${userId}`);
+    
+    // 检查存储警告
+    const warning = getStorageWarning();
+    if (warning) {
+      console.warn(warning);
+    }
   } catch (error) {
-    console.error('Failed to save user data:', error);
+    console.error('❌ Failed to save user data:', error);
+    
+    // 处理存储配额超出错误
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      const channelCount = channels.length;
+      const totalContents = channels.reduce((sum, ch) => sum + ch.contents.length, 0);
+      const storageInfo = getStorageInfo();
+      
+      alert(
+        `⚠️ STORAGE FULL!\n\n` +
+        `Storage Usage: ${storageInfo.usedKB.toFixed(0)}KB / ${storageInfo.estimatedLimitKB}KB (${storageInfo.usagePercent.toFixed(0)}%)\n\n` +
+        `You have ${channelCount} channels with ${totalContents} images.\n\n` +
+        `To continue using the app, please:\n` +
+        `• Delete some old channels\n` +
+        `• Delete unused images\n\n` +
+        `Your recent changes could not be saved.`
+      );
+      
+      throw error; // 重新抛出，让调用者知道保存失败
+    }
+    
+    throw error;
   }
 }
 
