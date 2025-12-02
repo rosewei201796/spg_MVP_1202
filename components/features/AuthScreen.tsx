@@ -32,16 +32,20 @@ export function AuthScreen({ onLogin, onRegister, onAutoRegister, error }: AuthS
   return (
     <div className="absolute inset-0 bg-[#121212] flex flex-col items-center justify-center p-6 overflow-y-auto">
       {/* Logo */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-hot-pink border-4 border-black hard-shadow flex items-center justify-center">
-            <Zap size={24} className="text-black" fill="black" />
+      <div className="mb-10 text-center">
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 bg-hot-pink border-4 border-black hard-shadow flex items-center justify-center">
+            <Zap size={32} className="text-black" fill="black" strokeWidth={2} />
           </div>
-          <h1 className="text-4xl font-black text-white uppercase tracking-tight">SPG</h1>
         </div>
-        <p className="text-electric-blue text-xs font-bold uppercase tracking-wider text-center">
-          AI CONTENT CREATION
-        </p>
+        
+        {/* Poetic Title */}
+        <div className="max-w-sm mx-auto">
+          <h1 className="text-white text-2xl font-bold italic leading-relaxed tracking-wide">
+            A universe in a grain of sand.
+          </h1>
+        </div>
       </div>
 
       {/* Auth Card */}
