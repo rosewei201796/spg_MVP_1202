@@ -35,6 +35,8 @@ export const THEME_LIBRARIES: Record<string, ThemeLibrary> = {
       "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1535378437321-292cc4d47804?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop",
     ],
   },
   nature: {
@@ -45,6 +47,8 @@ export const THEME_LIBRARIES: Record<string, ThemeLibrary> = {
       "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1000&auto=format&fit=crop",
     ],
   },
   abstract: {
@@ -55,6 +59,8 @@ export const THEME_LIBRARIES: Record<string, ThemeLibrary> = {
       "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1579783902614-a3fb39279c15?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1605806616949-1e87b487bc2a?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1557672172-298e090bd0f1?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1000&auto=format&fit=crop",
     ],
   },
   space: {
@@ -65,6 +71,8 @@ export const THEME_LIBRARIES: Record<string, ThemeLibrary> = {
       "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1000&auto=format&fit=crop",
     ],
   },
   minimal: {
@@ -75,6 +83,8 @@ export const THEME_LIBRARIES: Record<string, ThemeLibrary> = {
       "https://images.unsplash.com/photo-1486324885351-9887c72f4448?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1494145904049-0dca59b4bbad?q=80&w=1000&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1451847251646-8a6c0dd1510c?q=80&w=1000&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?q=80&w=1000&auto=format&fit=crop",
     ],
   },
 };
@@ -127,13 +137,11 @@ export const createMockChannel = (
   };
 };
 
-// Initial 5 channels with distinct themes
+// Initial 3 channels with distinct themes for explore view
 export const INITIAL_CHANNELS: Channel[] = [
   createMockChannel("Cyber Future", "System", "cyberpunk"),
   createMockChannel("Wild Nature", "Alice", "nature"),
   createMockChannel("Deep Space", "Bob", "space"),
-  createMockChannel("Abstract Mind", "System", "abstract"),
-  createMockChannel("Pure Lines", "Charlie", "minimal"),
 ];
 
 // Helper to get random theme key

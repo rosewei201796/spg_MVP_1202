@@ -12,7 +12,7 @@ interface MobileShellProps {
 
 export function MobileShell({
   children,
-  showStatusBar = true,
+  showStatusBar = false,
   className,
 }: MobileShellProps) {
   return (

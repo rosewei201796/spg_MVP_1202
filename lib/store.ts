@@ -5,6 +5,7 @@ import {
   getRandomThemeKey,
   THEME_LIBRARIES,
   createMockContent,
+  INITIAL_CHANNELS,
 } from "./mockData";
 import { API } from "./api";
 
@@ -75,7 +76,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial state
   currentView: "explore",
-  channels: [], // 初始为空，用户创建 channel 后才会有数据
+  channels: INITIAL_CHANNELS, // 预置3个 channel，每个6张图
   userChannels: [],
 
   activeChannelIdx: 0,

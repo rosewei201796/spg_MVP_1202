@@ -1,0 +1,33 @@
+TypeScript 构建错误修复补丁
+================================
+
+文件: lib/api/imageGeneration.ts
+行号: 第 65-70 行
+
+原代码:
+-------
+    // 标准 Gemini Image 响应格式（添加 Accept: application/json 后）
+    if (data.choices?.[0]?.message?.images?.[0]?.image_url?.url) {
+      imageUrl = data.choices[0].message.images[0].image_url.url;
+      console.log('✅ Extracted image from Gemini response (data URL format)');
+      console.log('📸 Image preview:', imageUrl.substring(0, 80) + '...');
+    }
+
+修复后:
+-------
+    // 标准 Gemini Image 响应格式（添加 Accept: application/json 后）
+    if (data.choices?.[0]?.message?.images?.[0]?.image_url?.url) {
+      imageUrl = data.choices[0].message.images[0].image_url.url;
+      console.log('✅ Extracted image from Gemini response (data URL format)');
+      if (imageUrl) {
+        console.log('📸 Image preview:', imageUrl.substring(0, 80) + '...');
+      }
+    }
+
+改动说明:
+---------
+在第 69 行调用 imageUrl.substring() 之前添加了 null 检查，
+避免 TypeScript 类型错误。
+
+此修复已在本地 Git 提交中，提交哈希: d0db8b2
+
