@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Neo-Brutal Color Palette */
+  --color-bg-main: #121212;
+  --color-text-main: #ffffff;
+  --color-text-inverse: #000000;
+  
+  /* Neon Accents */
+  --color-neon-orange: #FF5F1F;
+  --color-hot-pink: #FF00FF;
+  --color-electric-blue: #00F0FF;
+  
+  /* Structural */
+  --border-thickness: 3px;
+  --shadow-offset: 6px;
+  
+  /* Legacy variables for compatibility */
+  --background: #121212;
+  --foreground: #ffffff;
+}
+
+@layer base {
+  html {
+    /* Prevent pinch zoom on mobile */
+    touch-action: pan-x pan-y;
+  }
+  
+  body {
+    @apply bg-[#121212] text-white;
+    font-family: 'Archivo Black', 'Arial Black', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent bounce scrolling on iOS */
+    overscroll-behavior: none;
+    /* Use dvh for mobile */
+    height: 100dvh;
+    overflow: hidden;
+    font-weight: 900;
+  }
+  
+  /* Disable pull-to-refresh on mobile */
+  body {
+    overscroll-behavior-y: contain;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 900;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom mobile utilities */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Prevent text selection during swipes */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Neo-Brutal Hard Shadow */
+  .hard-shadow {
+    box-shadow: 6px 6px 0px #000000;
+    border: 3px solid #000000;
+  }
+
+  .hard-shadow-sm {
+    box-shadow: 3px 3px 0px #000000;
+    border: 2px solid #000000;
+  }
+
+  .hard-shadow-lg {
+    box-shadow: 8px 8px 0px #000000;
+    border: 4px solid #000000;
+  }
+
+  /* Active state for hard shadow */
+  .hard-shadow-active:active {
+    transform: translate(3px, 3px);
+    box-shadow: 3px 3px 0px #000000;
+  }
+
+  /* Neon colors */
+  .text-neon-orange { color: #FF5F1F; }
+  .text-hot-pink { color: #FF00FF; }
+  .text-electric-blue { color: #00F0FF; }
+  
+  .bg-neon-orange { background-color: #FF5F1F; }
+  .bg-hot-pink { background-color: #FF00FF; }
+  .bg-electric-blue { background-color: #00F0FF; }
+
+  .border-neon-orange { border-color: #FF5F1F; }
+  .border-hot-pink { border-color: #FF00FF; }
+  .border-electric-blue { border-color: #00F0FF; }
+
+  /* Text shadows for Neo-Brutal */
+  .text-shadow-brutal {
+    text-shadow: 3px 3px 0px #FF5F1F;
+  }
+
+  .text-shadow-pink {
+    text-shadow: 3px 3px 0px #FF00FF;
+  }
+
+  .text-shadow-blue {
+    text-shadow: 3px 3px 0px #00F0FF;
+  }
+
+  /* Decorative stripe */
+  .deco-stripe {
+    background: repeating-linear-gradient(
+      45deg,
+      #FF5F1F,
+      #FF5F1F 10px,
+      #121212 10px,
+      #121212 20px
+    );
+    border-top: 3px solid #000000;
+    border-bottom: 3px solid #000000;
+  }
+
+  /* Animations */
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .slide-in-from-bottom {
+    animation: slide-in-from-bottom 0.3s ease-out;
+  }
+
+  .slide-in-brutal {
+    animation: slide-in-brutal 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-brutal {
+    from {
+      transform: translate(-10px, -10px);
+      opacity: 0;
+    }
+    to {
+      transform: translate(0, 0);
+      opacity: 1;
+    }
+  }
+
+  /* Sharp corners everywhere - override Tailwind defaults */
+  .brutal-reset {
+    border-radius: 0 !important;
+  }
+}
