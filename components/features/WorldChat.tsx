@@ -191,7 +191,7 @@ export function WorldChat({ channelId, channelName }: WorldChatProps) {
             onKeyPress={handleKeyPress}
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
-            placeholder={currentUser ? "Say something..." : "Login to chat"}
+            placeholder={currentUser ? "Join the buzz…" : "Login to chat"}
             disabled={!currentUser}
             maxLength={200}
             className="flex-1 bg-white/10 border-2 border-white/20 px-3 py-2 text-white text-sm font-bold placeholder:text-gray-500 focus:outline-none focus:border-electric-blue disabled:opacity-50 disabled:cursor-not-allowed"
