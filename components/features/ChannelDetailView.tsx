@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, PanInfo } from "framer-motion";
+import { useRef } from "react";
 import {
   ArrowLeft,
   Upload,
@@ -20,11 +21,13 @@ export function ChannelDetailView() {
     setCurrentView,
     getDetailChannel,
     getDetailContent,
-    handleUploadToChannel,
+    addUploadedImageToChannel,
     openRemix,
     toggleChannelDropToFeed,
     deleteContent,
   } = useAppStore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const channel = getDetailChannel();
   const currentContent = getDetailContent();
@@ -57,6 +60,55 @@ export function ChannelDetailView() {
         setDetailContentIdx(prevIdx);
       }
     }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // 验证文件大小 (最大 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      // 读取图片并转换为 Base64
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        if (imageUrl) {
+          // 添加到 channel
+          addUploadedImageToChannel(channel.id, imageUrl, file.name);
+          
+          // 清空 input，以便可以重复选择同一个文件
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          
+          // 切换到新上传的图片（现在是第一个）
+          setDetailContentIdx(0);
+        }
+      };
+      reader.onerror = () => {
+        alert('Failed to read image file');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -125,7 +177,7 @@ export function ChannelDetailView() {
 
               {/* Add Button */}
               <button
-                onClick={() => handleUploadToChannel(channel.id)}
+                onClick={handleUploadClick}
                 className="px-4 h-12 flex items-center gap-2 bg-neon-orange border-4 border-black hard-shadow pointer-events-auto active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_#000] transition-all"
               >
                 <Upload size={18} className="text-black" strokeWidth={3} />
@@ -137,6 +189,15 @@ export function ChannelDetailView() {
           )}
         </div>
       </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
       {/* Scroll Indicator - Neo-Brutal */}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none z-10">

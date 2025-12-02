@@ -94,7 +94,8 @@ interface AppState {
   openRemix: (content: Content, channelName: string, isOwnChannel: boolean, currentChannelId?: string) => void;
   handleCreateChannel: (prompt: string, isRemix?: boolean, sourceChannelName?: string, dropToFeed?: boolean) => Promise<void>;
   handleRemix: () => Promise<void>; // 统一的 remix 处理函数
-  handleUploadToChannel: (channelId: string) => void;
+  handleUploadToChannel: (channelId: string) => void; // 废弃，仅保留兼容性
+  addUploadedImageToChannel: (channelId: string, imageUrl: string, prompt?: string) => void; // 新的上传函数
   toggleChannelDropToFeed: (channelId: string) => void;
   
   // Delete actions
@@ -539,25 +540,59 @@ export const useAppStore = create<AppState>((set, get) => {
   },
 
   handleUploadToChannel: (channelId) => {
-    const state = get();
-    const channelIndex = state.channels.findIndex((c) => c.id === channelId);
-    if (channelIndex === -1) return;
+    // 废弃函数，保留仅为兼容性
+    console.log('handleUploadToChannel is deprecated, use addUploadedImageToChannel instead');
+  },
 
-    const channel = state.channels[channelIndex];
-    const theme = THEME_LIBRARIES[channel.theme] || THEME_LIBRARIES.cyberpunk;
-    const randomThemeImg =
-      theme.images[Math.floor(Math.random() * theme.images.length)];
+  addUploadedImageToChannel: (channelId, imageUrl, prompt = "Uploaded Image") => {
+    set((state) => {
+      // 创建新的 content
+      const newContent: Content = {
+        id: `content_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        channelId: channelId,
+        type: "image",
+        src: imageUrl,
+        prompt: prompt,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+      };
 
-    const newContent = createMockContent(
-      randomThemeImg,
-      theme.name,
-      "Uploaded user content"
-    );
+      // 更新 userChannels
+      const updatedUserChannels = state.userChannels.map((channel) => {
+        if (channel.id === channelId) {
+          return {
+            ...channel,
+            contents: [newContent, ...channel.contents],
+          };
+        }
+        return channel;
+      });
 
-    const updatedChannels = [...state.channels];
-    updatedChannels[channelIndex].contents.unshift(newContent);
+      // 更新 channels (feed流)
+      const updatedChannels = state.channels.map((channel) => {
+        if (channel.id === channelId) {
+          return {
+            ...channel,
+            contents: [newContent, ...channel.contents],
+          };
+        }
+        return channel;
+      });
 
-    set({ channels: updatedChannels });
+      // 自动保存用户数据
+      if (state.currentUser) {
+        autoSaveUserData(
+          state.currentUser.id,
+          updatedUserChannels,
+          Array.from(state.likedContents)
+        );
+      }
+
+      return {
+        channels: updatedChannels,
+        userChannels: updatedUserChannels,
+      };
+    });
   },
 
   toggleChannelDropToFeed: (channelId) => {
