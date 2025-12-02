@@ -1,10 +1,10 @@
 "use client";
 
-import { Zap, Settings } from "lucide-react";
+import { Zap, Settings, Trash2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 export function Profile() {
-  const { userChannels, currentUser, setDetailChannel, toggleChannelDropToFeed, setCurrentView } = useAppStore();
+  const { userChannels, currentUser, setDetailChannel, toggleChannelDropToFeed, setCurrentView, deleteChannel } = useAppStore();
 
   return (
     <div className="w-full h-full bg-[#121212] text-white flex flex-col pt-16 px-4">
@@ -72,6 +72,19 @@ export function Profile() {
                   />
                 </div>
                 
+                {/* Delete Channel Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${channel.name}"? All content will be permanently deleted.`)) {
+                      deleteChannel(channel.id);
+                    }
+                  }}
+                  className="absolute top-2 left-2 w-8 h-8 bg-red-600 border-2 border-black z-10 flex items-center justify-center transition-all active:scale-95 hover:bg-red-700"
+                >
+                  <Trash2 size={16} className="text-white" strokeWidth={3} />
+                </button>
+
                 {/* Drop to Feed Toggle Button */}
                 <button
                   onClick={(e) => {

@@ -96,6 +96,10 @@ interface AppState {
   handleRemix: () => Promise<void>; // 统一的 remix 处理函数
   handleUploadToChannel: (channelId: string) => void;
   toggleChannelDropToFeed: (channelId: string) => void;
+  
+  // Delete actions
+  deleteContent: (channelId: string, contentId: string) => void;
+  deleteChannel: (channelId: string) => void;
 
   // Helpers
   getCurrentChannel: () => Channel | null;
@@ -594,6 +598,99 @@ export const useAppStore = create<AppState>((set, get) => {
         channels: updatedChannels,
         userChannels: updatedUserChannels,
       };
+    });
+  },
+
+  // Delete actions
+  deleteContent: (channelId, contentId) => {
+    set((state) => {
+      // 从 userChannels 中删除 content
+      const updatedUserChannels = state.userChannels.map((channel) => {
+        if (channel.id === channelId) {
+          return {
+            ...channel,
+            contents: channel.contents.filter((content) => content.id !== contentId),
+          };
+        }
+        return channel;
+      });
+
+      // 从 channels (feed流) 中删除 content
+      const updatedChannels = state.channels.map((channel) => {
+        if (channel.id === channelId) {
+          return {
+            ...channel,
+            contents: channel.contents.filter((content) => content.id !== contentId),
+          };
+        }
+        return channel;
+      });
+
+      // 自动保存用户数据
+      if (state.currentUser) {
+        autoSaveUserData(
+          state.currentUser.id,
+          updatedUserChannels,
+          Array.from(state.likedContents)
+        );
+      }
+
+      // 如果删除的是当前正在查看的 content，返回到该 channel 的第一个 content
+      const newState: Partial<AppState> = {
+        channels: updatedChannels,
+        userChannels: updatedUserChannels,
+      };
+
+      if (state.detailChannelId === channelId) {
+        const updatedChannel = updatedUserChannels.find((c) => c.id === channelId);
+        if (updatedChannel && updatedChannel.contents.length === 0) {
+          // 如果 channel 没有内容了，返回到 profile 页面
+          newState.currentView = 'myChannels';
+          newState.detailChannelId = null;
+        } else if (state.getDetailContent()?.id === contentId) {
+          // 如果删除的是当前查看的内容，切换到第一个内容
+          newState.detailContentIdx = 0;
+        }
+      }
+
+      return newState;
+    });
+  },
+
+  deleteChannel: (channelId) => {
+    set((state) => {
+      // 只能删除用户自己创建的 channel
+      const channel = state.userChannels.find((c) => c.id === channelId);
+      if (!channel) return state;
+
+      // 从 userChannels 中删除
+      const updatedUserChannels = state.userChannels.filter((c) => c.id !== channelId);
+
+      // 从 channels (feed流) 中删除
+      const updatedChannels = state.channels.filter((c) => c.id !== channelId);
+
+      // 自动保存用户数据
+      if (state.currentUser) {
+        autoSaveUserData(
+          state.currentUser.id,
+          updatedUserChannels,
+          Array.from(state.likedContents)
+        );
+      }
+
+      // 如果删除的是当前正在查看的 channel，返回到 profile 页面
+      const newState: Partial<AppState> = {
+        channels: updatedChannels,
+        userChannels: updatedUserChannels,
+      };
+
+      if (state.detailChannelId === channelId) {
+        newState.currentView = 'myChannels';
+        newState.detailChannelId = null;
+        newState.detailContentIdx = 0;
+      }
+
+      return newState;
     });
   },
 

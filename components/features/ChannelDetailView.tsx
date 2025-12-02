@@ -6,6 +6,7 @@ import {
   Upload,
   Heart,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
@@ -22,6 +23,7 @@ export function ChannelDetailView() {
     handleUploadToChannel,
     openRemix,
     toggleChannelDropToFeed,
+    deleteContent,
   } = useAppStore();
 
   const channel = getDetailChannel();
@@ -70,12 +72,19 @@ export function ChannelDetailView() {
           content={currentContent}
           channelName={channel.name}
           owner={channel.owner}
+          isUserGenerated={channel.isUserGenerated}
+          channelId={channel.id}
           onRemix={() => openRemix(
             currentContent, 
             channel.name, 
             channel.isUserGenerated, // isOwnChannel
             channel.id // currentChannelId
           )}
+          onDelete={() => {
+            if (confirm('Delete this content? This action cannot be undone.')) {
+              deleteContent(channel.id, currentContent.id);
+            }
+          }}
         />
       </motion.div>
 
@@ -150,12 +159,18 @@ function ContentCard({
   content,
   channelName,
   owner,
+  isUserGenerated,
+  channelId,
   onRemix,
+  onDelete,
 }: {
   content: any;
   channelName: string;
   owner: string;
+  isUserGenerated: boolean;
+  channelId: string;
   onRemix: () => void;
+  onDelete: () => void;
 }) {
   const { toggleLike, isContentLiked } = useAppStore();
   const isLiked = isContentLiked(content.id);
@@ -215,16 +230,31 @@ function ContentCard({
           {content.prompt}
         </p>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemix();
-          }}
-          className="mt-4 flex items-center gap-3 bg-neon-orange px-6 py-3 font-black text-black uppercase text-sm border-4 border-black hard-shadow active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_#000] transition-all"
-        >
-          <RefreshCw size={18} />
-          <span>REMIX</span>
-        </button>
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemix();
+            }}
+            className="flex items-center gap-3 bg-neon-orange px-6 py-3 font-black text-black uppercase text-sm border-4 border-black hard-shadow active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_#000] transition-all"
+          >
+            <RefreshCw size={18} />
+            <span>REMIX</span>
+          </button>
+
+          {/* Delete button - only for user's own content */}
+          {isUserGenerated && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="flex items-center gap-2 bg-gray-800 px-4 py-3 font-black text-white uppercase text-sm border-4 border-black hard-shadow active:translate-x-[3px] active:translate-y-[3px] active:shadow-[3px_3px_0px_#000] transition-all"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
